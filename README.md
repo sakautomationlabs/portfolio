@@ -4,7 +4,7 @@ A single-page, dark-themed personal portfolio for **Sakar Sharma**, QA Automatio
 
 Built with plain HTML, CSS and JavaScript. There are no frameworks, no build step and no dependencies to install.
 
-**Repository:** https://github.com/sakautomationlabs/sak_portfolio
+**Repository:** https://github.com/sakautomationlabs/portfolio
 
 ## Features
 
@@ -51,7 +51,7 @@ Education, Awards and Additional Information (`#education`, `#awards`, `#additio
 1. Rename `portfolio.html` to `index.html` and commit it to the repository root.
 2. In the repository, open **Settings > Pages**.
 3. Under **Build and deployment**, choose **Deploy from a branch**, select `main` and `/ (root)`, then save.
-4. The site will be available at `https://sakautomationlabs.github.io/sak_portfolio/`.
+4. The site will be available at `https://sakautomationlabs.github.io/portfolio/`.
 
 ## Customize
 
