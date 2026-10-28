@@ -50,6 +50,8 @@ nav a::before{content:"";position:absolute;left:-.8rem;top:50%;width:.5rem;heigh
 .hero{padding:5rem 0 3rem}
 .hi{font-size:clamp(1.6rem,4vw,2.25rem);font-weight:500;line-height:1.2;margin-bottom:.75rem}
 .hero-row{display:flex;flex-direction:column;gap:1.25rem}
+@media (min-width:48rem){.hero-row{flex-direction:row;align-items:center;gap:2.5rem}}
+.profile-photo{width:280px;height:390px;border-radius:1rem;object-fit:cover;border:2px solid var(--line);flex-shrink:0}
 h1{font-size:clamp(2.75rem,8vw,3.75rem);font-weight:500;line-height:1;text-wrap:pretty}
 .mv{display:grid;gap:1rem;grid-template-columns:1fr;margin-top:1rem;padding-bottom:2.5rem}
 @media (min-width:64rem){.hero{padding:9rem 0 3rem}}
@@ -191,10 +193,13 @@ footer{border-top:1px solid var(--line);padding:2rem 0;color:var(--icon);font-si
   <p class="hi muted shiny">Hi, I’m Sakar Sharma</p>
   <p class="headline">| QA Automation Engineer | AI-Agentic Test Automation | Python &amp; Playwright | Web, Mobile &amp; API Testing | QA Team Leadership, Metrics &amp; Quality Excellence |</p>
   <div class="hero-row">
-    <h1>QA Automation <br>Lead</h1>
-    <div class="about-text">
-      <p>QA Automation Lead and Quality Engineering professional with 13+ years of experience driving software quality, test automation, quality engineering strategy, release governance, and Agile delivery across Web, Mobile, API, Data, Healthcare, Financial Services, and Enterprise applications. Proven track record of delivering 80–85% automation coverage across targeted regression and critical QA workflows, managing a 480-test automation suite, reducing regression execution time from 15–20 hours to just 3 hours and 42-50 minutes, cutting manual testing effort by 70–80%, and reducing defect leakage by 61%. <button type="button" class="more" id="more" aria-expanded="false" aria-controls="more-text">(...more)</button></p>
-      <div class="more-text" id="more-text" hidden><p>Strong hands-on expertise in Python, JavaScript, Selenium, Playwright, Cypress, Appium, REST API automation, SQL, CI/CD integration, Jira, and Azure DevOps, with experience in scalable automation frameworks, end-to-end testing, backend validation, and release readiness. Actively advancing AI-driven quality engineering through AI-assisted testing, Generative AI validation, LLM testing, RAG pipeline evaluation, AI chatbot quality assurance, hallucination detection, and conversational reliability, while exploring AI Agents and Model Context Protocol (MCP) integrations.</p><p>Combines technical depth with strategic quality ownership, cross-functional collaboration, stakeholder management, and team mentorship to strengthen test effectiveness, accelerate release cycles, improve product reliability, and align quality engineering initiatives with business outcomes. Passionate about building scalable, intelligent, and data-driven testing solutions that evolve traditional QA into modern, AI-enabled quality engineering.</p></div>
+    <img src="Sak_Profile.png" alt="Sakar Sharma" class="profile-photo">
+    <div>
+      <h1>QA Automation <br>Lead</h1>
+      <div class="about-text">
+        <p>QA Automation Lead and Quality Engineering professional with 13+ years of experience driving software quality, test automation, quality engineering strategy, release governance, and Agile delivery across Web, Mobile, API, Data, Healthcare, Financial Services, and Enterprise applications. Proven track record of delivering 80–85% automation coverage across targeted regression and critical QA workflows, managing a 480-test automation suite, reducing regression execution time from 15–20 hours to just 3 hours and 42-50 minutes, cutting manual testing effort by 70–80%, and reducing defect leakage by 61%. <button type="button" class="more" id="more" aria-expanded="false" aria-controls="more-text">(...more)</button></p>
+        <div class="more-text" id="more-text" hidden><p>Strong hands-on expertise in Python, JavaScript, Selenium, Playwright, Cypress, Appium, REST API automation, SQL, CI/CD integration, Jira, and Azure DevOps, with experience in scalable automation frameworks, end-to-end testing, backend validation, and release readiness. Actively advancing AI-driven quality engineering through AI-assisted testing, Generative AI validation, LLM testing, RAG pipeline evaluation, AI chatbot quality assurance, hallucination detection, and conversational reliability, while exploring AI Agents and Model Context Protocol (MCP) integrations.</p><p>Combines technical depth with strategic quality ownership, cross-functional collaboration, stakeholder management, and team mentorship to strengthen test effectiveness, accelerate release cycles, improve product reliability, and align quality engineering initiatives with business outcomes. Passionate about building scalable, intelligent, and data-driven testing solutions that evolve traditional QA into modern, AI-enabled quality engineering.</p></div>
+      </div>
     </div>
   </div>
 
