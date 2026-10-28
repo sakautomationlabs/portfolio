@@ -1,0 +1,1786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SakAutomationLabs Automations | AI Test Suite</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Base styles */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #a855f7; /* purple-500 */
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #9333ea; /* purple-600 */
+        }
+
+        /* Glassmorphism UI with improved light/dark mode support */
+        .glass-ui {
+            border: 1px solid;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        /* Light Mode Styles */
+        html:not(.dark) {
+            --bg-color: #f3f4f6; /* gray-100 */
+            --text-color: #1f2937; /* gray-800 */
+            --text-muted-color: #4b5563; /* gray-600 */
+            --sidebar-bg: rgba(255, 255, 255, 0.6);
+            --glass-border-color: rgba(0, 0, 0, 0.1);
+            --input-bg: #ffffff;
+            --input-border: #d1d5db; /* gray-300 */
+            --active-link-bg: rgba(168, 85, 247, 0.1); /* purple-500 with opacity */
+            --log-bg: #111827; /* gray-900 */
+            --log-text: #f9fafb; /* gray-50 */
+        }
+        
+        /* Dark Mode Styles */
+        html.dark {
+            --bg-color: #030712; /* gray-950 */
+            --text-color: #f9fafb; /* gray-50 */
+            --text-muted-color: #9ca3af; /* gray-400 */
+            --sidebar-bg: rgba(17, 24, 39, 0.5); /* gray-900 with opacity */
+            --glass-border-color: rgba(255, 255, 255, 0.1);
+            --input-bg: #1f2937; /* gray-800 */
+            --input-border: #4b5563; /* gray-600 */
+            --active-link-bg: rgba(168, 85, 247, 0.2);
+            --log-bg: #1f2937; /* gray-800 */
+            --log-text: #f9fafb; /* gray-50 */
+        }
+
+        .glass-ui {
+            background-color: var(--sidebar-bg);
+            border-color: var(--glass-border-color);
+        }
+        
+        .log-area {
+            background-color: var(--log-bg);
+            color: var(--log-text);
+            white-space: pre-wrap; /* Ensures formatting of artifacts is preserved */
+        }
+        /* Stacked logs style */
+        .live-logs div, .live-logs strong {
+            padding-bottom: 4px;
+        }
+
+        /* Active sidebar link style */
+        .sidebar-link.active {
+            background-color: var(--active-link-bg);
+            border-right: 3px solid #a855f7; /* purple-500 */
+            font-weight: 600;
+        }
+        
+        /* Custom tooltip */
+        [data-tooltip] {
+            position: relative;
+        }
+        [data-tooltip]:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #1f2937; /* gray-800 */
+            color: white;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            white-space: nowrap;
+            z-index: 50;
+        }
+
+        /* Utility to hide elements */
+        .hidden-section {
+            display: none;
+        }
+        .tab-pane, .form-section, .settings-section {
+            display: none;
+        }
+        .tab-pane.active, .form-section.active, .settings-section.active {
+            display: block;
+        }
+
+        /* Pulse animation for progress bars */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .pulse-animation {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        /* FIX: Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+        .modal-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background: var(--sidebar-bg);
+            padding: 2rem;
+            border-radius: 1rem;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .report-item {
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .report-item:hover {
+            background-color: var(--active-link-bg);
+        }
+        .report-item.selected {
+            background-color: rgba(168, 85, 247, 0.3);
+            border-left: 4px solid #a855f7;
+        }
+
+    </style>
+</head>
+<body class="bg-[var(--bg-color)] text-[var(--text-color)] antialiased transition-colors duration-300">
+    <canvas id="neural-network-bg" class="fixed top-0 left-0 w-full h-full z-0 opacity-60 dark:opacity-70"></canvas>
+    
+    <div class="relative z-10 flex h-screen overflow-hidden">
+        <aside class="w-64 glass-ui flex-shrink-0 p-4 flex flex-col justify-between">
+            <div>
+                <div class="flex items-center space-x-3 mb-10 px-2">
+                    <i class="fas fa-robot text-3xl text-purple-500"></i>
+                    <h1 class="text-xl font-bold">SakAutomationLabs Suite</h1>
+                </div>
+                <nav id="sidebar-nav" class="space-y-2">
+                    <a href="#dashboard" class="sidebar-link flex items-center p-3 rounded-lg transition-all duration-200 hover:bg-[var(--active-link-bg)]" data-tab="dashboard">
+                        <i class="fas fa-tachometer-alt w-6 text-center"></i><span class="ml-4">Dashboard</span>
+                    </a>
+                    <a href="#req-ai" class="sidebar-link flex items-center p-3 rounded-lg transition-all duration-200 hover:bg-[var(--active-link-bg)]" data-tab="req-ai">
+                        <i class="fas fa-file-import w-6 text-center"></i><span class="ml-4">Requirements & AI</span>
+                    </a>
+                    <a href="#jira-capabilities" class="sidebar-link flex items-center p-3 rounded-lg transition-all duration-200 hover:bg-[var(--active-link-bg)]" data-tab="jira-capabilities">
+                        <i class="fab fa-jira w-6 text-center"></i><span class="ml-4">Jira Capabilities</span>
+                    </a>
+                    <a href="#runner-suite" class="sidebar-link flex items-center p-3 rounded-lg transition-all duration-200 hover:bg-[var(--active-link-bg)]" data-tab="runner-suite">
+                        <i class="fas fa-rocket w-6 text-center"></i><span class="ml-4">Runner Suite</span>
+                    </a>
+                    <a href="#ai-assistant" class="sidebar-link flex items-center p-3 rounded-lg transition-all duration-200 hover:bg-[var(--active-link-bg)]" data-tab="ai-assistant">
+                        <i class="fas fa-headset w-6 text-center"></i><span class="ml-4">AI Assistant</span>
+                    </a>
+                    <a href="#settings" class="sidebar-link flex items-center p-3 rounded-lg transition-all duration-200 hover:bg-[var(--active-link-bg)]" data-tab="settings">
+                        <i class="fas fa-cog w-6 text-center"></i><span class="ml-4">Settings</span>
+                    </a>
+                </nav>
+            </div>
+            <div class="p-2">
+                <div class="flex items-center justify-between mb-4">
+                    <div id="live-clock" class="text-sm font-mono text-[var(--text-muted-color)]"></div>
+                    <button id="theme-toggle" class="relative p-2 rounded-full hover:bg-[var(--active-link-bg)]" data-tooltip="Toggle Theme">
+                        <i class="fas fa-sun text-yellow-500"></i>
+                        <i class="fas fa-moon hidden text-purple-400"></i>
+                    </button>
+                </div>
+                <div class="text-center text-xs text-gray-500">
+                    &copy; 2025 SakAutomationLabs Automations
+                </div>
+            </div>
+        </aside>
+
+        <main class="flex-1 p-8 overflow-y-auto">
+            <template id="live-execution-template">
+                <div class="glass-ui p-6 rounded-2xl mt-8">
+                     <h3 class="text-xl font-semibold mb-4">Live Execution Status</h3>
+                     <div class="space-y-4">
+                         <div>
+                             <div class="flex justify-between mb-1">
+                                 <span class="text-base font-medium text-purple-500">Overall Progress</span>
+                                 <span class="text-sm font-medium text-purple-500 progress-percentage">0%</span>
+                             </div>
+                             <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                                 <div class="bg-purple-500 h-2.5 rounded-full progress-bar" style="width: 0%"></div>
+                             </div>
+                             <div class="flex justify-between text-xs text-[var(--text-muted-color)] mt-1">
+                                <span class="time-estimation">Est. Time: N/A</span>
+                                <span class="time-start-end">Start/End: --:-- / --:--</span>
+                             </div>
+                         </div>
+                         <div>
+                             <label class="block text-sm font-medium mb-2">Live Logs</label>
+                             <div class="w-full h-48 log-area border border-[var(--input-border)] rounded-lg p-3 font-mono text-xs overflow-y-auto live-logs">
+                                 <div>Waiting for execution to start...</div>
+                             </div>
+                         </div>
+                     </div>
+                </div>
+            </template>
+
+            <div id="tab-content" class="space-y-8">
+                <div id="dashboard" class="tab-pane">
+                    <h2 class="text-3xl font-bold mb-8">Dashboard</h2>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div class="lg:col-span-1 space-y-8">
+                            <div id="dashboard-report-form" class="glass-ui p-6 rounded-2xl">
+                                <h3 class="text-xl font-semibold mb-6">Execution Reports</h3>
+                                <div class="space-y-5">
+                                    <div>
+                                        <label for="req-source" class="block text-sm font-medium mb-2">Requirement Source</label>
+                                        <select id="req-source" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg p-2.5 focus:ring-purple-500 focus:border-purple-500">
+                                            <option selected disabled>Select Source</option>
+                                            <option value="api">API</option>
+                                            <option value="mobile">Mobile</option>
+                                            <option value="web">Web</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label for="report-date" class="block text-sm font-medium mb-2">Report Date</label>
+                                        <input type="date" id="report-date" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg p-2.5 focus:ring-purple-500 focus:border-purple-500">
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-3 pt-2">
+                                        <button id="get-report-btn" class="w-full bg-purple-600 hover:bg-purple-700 text-white rounded-lg py-2.5 font-semibold transition-all">Select Report</button>
+                                        <button id="view-report-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-2.5 font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed" disabled>View Report</button>
+                                        <button class="reset-btn col-span-2 w-full bg-gray-500 hover:bg-gray-600 text-white rounded-lg py-2.5 font-semibold transition-all">Reset</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="dashboard-send-form" class="glass-ui p-6 rounded-2xl">
+                                <h3 class="text-xl font-semibold mb-4">Send Report</h3>
+                                <div class="space-y-3">
+                                    <label class="flex items-center"><input type="checkbox" name="send-channel" value="Slack" class="form-checkbox bg-[var(--input-bg)] border-[var(--input-border)] text-purple-500 rounded"> <span class="ml-2">Slack</span></label>
+                                    <label class="flex items-center"><input type="checkbox" name="send-channel" value="Email" class="form-checkbox bg-[var(--input-bg)] border-[var(--input-border)] text-purple-500 rounded"> <span class="ml-2">Email</span></label>
+                                    <label class="flex items-center"><input type="checkbox" name="send-channel" value="Download" class="form-checkbox bg-[var(--input-bg)] border-[var(--input-border)] text-purple-500 rounded"> <span class="ml-2">Download</span></label>
+                                </div>
+                                <div class="flex space-x-3 pt-5">
+                                    <button id="send-report-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-2.5 font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed" disabled>Send Report</button>
+                                    <button class="reset-btn w-full bg-gray-500 hover:bg-gray-600 text-white rounded-lg py-2.5 font-semibold transition-all">Reset</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="lg:col-span-2 glass-ui p-6 rounded-2xl">
+                            <h3 class="text-xl font-semibold mb-4">AI-Powered Report Analysis</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="h-64"><canvas id="executionChart"></canvas></div>
+                                <div class="h-64"><canvas id="pieChart"></canvas></div>
+                            </div>
+                            <div class="mt-6">
+                                <label class="block text-sm font-medium mb-2">AI Summary & Recommendations</label>
+                                <textarea readonly id="report-summary" class="w-full h-28 log-area border border-[var(--input-border)] rounded-lg p-2.5 text-xs">Select a report to view analysis options.</textarea>
+                                <div class="flex items-center space-x-3 mt-3">
+                                    <select id="summary-ai-provider" class="flex-grow bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg p-2.5 text-sm focus:ring-purple-500 focus:border-purple-500">
+                                        <option selected disabled>Select AI Provider</option>
+                                        <option>OpenAI</option>
+                                        <option>Google Gemini</option>
+                                        <option>Anthropic</option>
+                                        <option>Groq</option>
+                                    </select>
+                                    <button id="analyze-report-btn" class="bg-purple-600 hover:bg-purple-700 text-white rounded-lg py-2.5 px-6 font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed" disabled>Analyze</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="dashboard-live-execution"></div>
+                </div>
+
+                <div id="req-ai" class="tab-pane">
+                    <h2 class="text-3xl font-bold mb-8">Requirements & AI Artifacts</h2>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div id="fetch-requirements-form" class="glass-ui p-8 rounded-2xl">
+                             <h3 class="text-xl font-semibold mb-6">Step 1: Fetch Requirements</h3>
+                            <div class="space-y-6">
+                                <div>
+                                    <label for="fetch-req-source" class="block text-sm font-medium mb-2">Requirement Source</label>
+                                    <select id="fetch-req-source" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg p-2.5 focus:ring-purple-500 focus:border-purple-500">
+                                        <option selected disabled>Select Source</option>
+                                        <option>Jira</option>
+                                        <option>Google Docs</option>
+                                        <option>Figma</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="fetch-source-id" class="block text-sm font-medium mb-2">Source ID / URL</label>
+                                    <input type="text" id="fetch-source-id" placeholder="Enter Jira Epic ID, Google Doc URL, etc." class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg p-2.5 focus:ring-purple-500 focus:border-purple-500">
+                                </div>
+                                <div class="flex space-x-4 pt-4">
+                                    <button id="execute-fetch-btn" class="w-full bg-purple-600 hover:bg-purple-700 text-white rounded-lg py-3 font-semibold">Execute</button>
+                                    <button class="reset-btn w-full bg-gray-500 hover:bg-gray-600 text-white rounded-lg py-3 font-semibold">Reset</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="ai-artifacts-form" class="glass-ui p-8 rounded-2xl">
+                            <h3 class="text-xl font-semibold mb-6">Step 2: Generate AI Artifacts</h3>
+                            <div class="space-y-6">
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Requirement</label>
+                                    <textarea id="ai-requirement-input" rows="4" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg p-2.5 focus:ring-purple-500 focus:border-purple-500" placeholder="Requirement details from Step 1 will appear here, or write your own." readonly></textarea>
+                                    <label class="flex items-center mt-2"><input type="checkbox" id="ai-write-own-req" class="form-checkbox bg-[var(--input-bg)] border-[var(--input-border)] text-purple-500 rounded"> <span class="ml-2 text-sm">Write/Edit Requirements Manually</span></label>
+                                </div>
+                                
+                                <div id="ai-artifacts-controls" class="space-y-6 transition-opacity duration-300">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label for="ai-provider" class="block text-sm font-medium mb-2">AI Provider</label>
+                                            <select id="ai-provider" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg p-2.5 focus:ring-purple-500 focus:border-purple-500">
+                                                <option selected disabled>Select Provider</option>
+                                                <option>OpenAI</option>
+                                                <option>Google Gemini</option>
+                                                <option>Anthropic</option>
+                                                <option>Groq</option>
+                                                <option>OpenRouter</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label for="ai-model" class="block text-sm font-medium mb-2">AI Model</label>
+                                            <select id="ai-model" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg p-2.5 focus:ring-purple-500 focus:border-purple-500">
+                                                <option selected disabled>Select Provider First</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label for="ai-artifact-type" class="block text-sm font-medium mb-2">Artifact Type</label>
+                                        <select id="ai-artifact-type" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg p-2.5 focus:ring-purple-500 focus:border-purple-500">
+                                            <option selected disabled>Select Type</option>
+                                            <option>Test Plan</option>
+                                            <option>Test Cases</option>
+                                            <option>User Stories (Gherkin)</option>
+                                            <option>Test Data (JSON)</option>
+                                            <option>E2E Script (Playwright)</option>
+                                            <option>E2E Script (Cypress)</option>
+                                            <option>API Collection (Postman)</option>
+                                            <option>Performance Script (k6)</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                         <label class="flex items-center mt-2"><input type="checkbox" id="ai-self-healing" class="form-checkbox bg-[var(--input-bg)] border-[var(--input-border)] text-purple-500 rounded"> <span class="ml-2 text-sm">Enable AI Self-Healing in script</span></label>
+                                    </div>
+                                    <div class="flex space-x-4 pt-4">
+                                        <button id="execute-ai-artifacts-btn" class="w-full bg-purple-600 hover:bg-purple-700 text-white rounded-lg py-3 font-semibold">Generate Artifact</button>
+                                        <button class="reset-btn w-full bg-gray-500 hover:bg-gray-600 text-white rounded-lg py-3 font-semibold">Reset</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="req-ai-live-execution"></div>
+                </div>
+
+                <div id="jira-capabilities" class="tab-pane">
+                    <h2 class="text-3xl font-bold mb-8">Jira Capabilities</h2>
+                    <div class="max-w-4xl mx-auto">
+                        <div id="jira-form" class="glass-ui p-8 rounded-2xl">
+                            <div class="flex items-center space-x-8 mb-8">
+                                <label class="block text-sm font-medium">Action Type</label>
+                                <div class="flex items-center space-x-6">
+                                    <label class="flex items-center"><input type="radio" name="jira-action" value="create" class="form-radio text-purple-500"> <span class="ml-2">Create</span></label>
+                                    <label class="flex items-center"><input type="radio" name="jira-action" value="update" class="form-radio text-purple-500"> <span class="ml-2">Update</span></label>
+                                </div>
+                            </div>
+
+                            <div id="jira-create-section" class="form-section space-y-6">
+                                <div>
+                                    <label for="jira-create-type" class="block text-sm font-medium mb-2">Jira Type</label>
+                                    <select id="jira-create-type" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg p-2.5 focus:ring-purple-500 focus:border-purple-500">
+                                        <option selected disabled>Select Type</option>
+                                        <option value="Epic">Epic</option>
+                                        <option value="Story">Story</option>
+                                        <option value="Task">Task</option>
+                                        <option value="Sub-task">Sub-task</option>
+                                        <option value="Test Set">Test Set</option>
+                                    </select>
+                                </div>
+                                <div class="space-y-4">
+                                    <input type="text" data-field="summary" placeholder="Summary" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg p-2.5">
+                                    <textarea data-field="description" placeholder="Description" rows="4" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg p-2.5"></textarea>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <input type="text" data-field="assignee" placeholder="Assignee" class="bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg p-2.5">
+                                        <input type="text" data-field="qa_assignee" placeholder="QA Assignee" class="bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg p-2.5">
+                                        <input type="text" data-field="sprint" placeholder="Sprint" class="bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg p-2.5">
+                                        <input type="text" data-field="target_sprint" placeholder="Target Sprint" class="bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg p-2.5">
+                                        <input type="text" data-field="labels" placeholder="Labels (comma-separated)" class="md:col-span-2 bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg p-2.5">
+                                        <input type="text" data-field="components" placeholder="Components (comma-separated)" class="md:col-span-2 bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg p-2.5">
+                                    </div>
+                                </div>
+                                <div id="jira-test-set-options" class="hidden-section space-y-4 pt-4 border-t border-[var(--input-border)]">
+                                    <label class="flex items-center"><input type="checkbox" id="create-tests-for-set" class="form-checkbox text-purple-500 rounded"> <span class="ml-2 text-sm">Create associated Tests?</span></label>
+                                    <div id="num-tests-container" class="hidden-section">
+                                        <label for="num-tests" class="block text-sm font-medium mb-2">Number of Tests to Create</label>
+                                        <input type="number" id="num-tests" data-field="num_tests" min="1" value="1" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg p-2.5">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div id="jira-update-section" class="form-section space-y-6">
+                                <div class="flex items-end space-x-3">
+                                    <div class="flex-grow">
+                                        <label for="jira-update-id" class="block text-sm font-medium mb-2">Jira ID to Update</label>
+                                        <input type="text" id="jira-update-id" data-field="issue_key" placeholder="Enter Jira Issue ID (e.g., PROJ-123)" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg p-2.5">
+                                    </div>
+                                    <button class="bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-2.5 px-4 font-semibold">Get Details</button>
+                                </div>
+                                <div id="jira-details-box" class="p-4 border border-[var(--input-border)] rounded-lg bg-gray-100 dark:bg-gray-800 hidden-section">
+                                    <h4 class="font-semibold mb-2">Jira Details</h4>
+                                    <p class="text-sm text-[var(--text-muted-color)]">Details for the fetched Jira issue will be displayed here.</p>
+                                </div>
+                            </div>
+
+                            <div class="flex space-x-4 pt-8">
+                                <button id="execute-jira-btn" class="w-full bg-purple-600 hover:bg-purple-700 text-white rounded-lg py-3 font-semibold">Execute</button>
+                                <button class="reset-btn w-full bg-gray-500 hover:bg-gray-600 text-white rounded-lg py-3 font-semibold">Reset</button>
+                            </div>
+                        </div>
+                        <div id="jira-live-execution"></div>
+                    </div>
+                </div>
+
+                <div id="runner-suite" class="tab-pane">
+                    <h2 class="text-3xl font-bold mb-8">Runner Suite</h2>
+                    <div class="max-w-4xl mx-auto">
+                        <div id="runner-suite-form" class="glass-ui p-8 rounded-2xl">
+                            <div class="space-y-6">
+                                <div>
+                                    <label for="runner-type" class="block text-sm font-medium mb-2">Runner Type</label>
+                                    <select id="runner-type" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg p-2.5 focus:ring-purple-500 focus:border-purple-500">
+                                        <option selected disabled>Select Runner Type</option>
+                                        <option value="api">API</option>
+                                        <option value="web">Web</option>
+                                        <option value="mobile">Mobile</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label for="execution-strategy" class="block text-sm font-medium mb-2">Execution Strategy</label>
+                                    <select id="execution-strategy" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg p-2.5 focus:ring-purple-500 focus:border-purple-500">
+                                        <option>Full Suite</option>
+                                        <option>AI-Prioritized (Risk-Based)</option>
+                                        <option>AI-Exploratory Testing</option>
+                                    </select>
+                                </div>
+
+                                <hr class="border-gray-300 dark:border-gray-700">
+
+                                <div id="web-runner-options" class="form-section space-y-6">
+                                    <h3 class="text-lg font-semibold">Web Runner Configuration</h3>
+                                    <div>
+                                        <label class="block text-sm font-medium mb-3">Browser Combinations</label>
+                                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                            <label class="flex items-center"><input type="checkbox" class="form-checkbox bg-[var(--input-bg)] border-[var(--input-border)] text-purple-500 rounded"> <span class="ml-2">Chrome</span></label>
+                                            <label class="flex items-center"><input type="checkbox" class="form-checkbox bg-[var(--input-bg)] border-[var(--input-border)] text-purple-500 rounded"> <span class="ml-2">Firefox</span></label>
+                                            <label class="flex items-center"><input type="checkbox" class="form-checkbox bg-[var(--input-bg)] border-[var(--input-border)] text-purple-500 rounded"> <span class="ml-2">Edge</span></label>
+                                            <label class="flex items-center"><input type="checkbox" class="form-checkbox bg-[var(--input-bg)] border-[var(--input-border)] text-purple-500 rounded"> <span class="ml-2">Safari</span></label>
+                                        </div>
+                                    </div>
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                                        <div>
+                                            <label class="block text-sm font-medium mb-2">Runner Suite</label>
+                                            <select class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg p-2.5"><option selected disabled>Select Suite</option><option>Sanity</option><option>Regression</option></select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium mb-2">Execution Mode</label>
+                                            <select class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg p-2.5"><option selected disabled>Select Mode</option><option>Parallel</option><option>Sequential</option></select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium mb-2">Server Mode</label>
+                                            <select class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg p-2.5"><option selected disabled>Select Mode</option><option>Local Machine</option><option>Docker</option><option>Cloud</option></select>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium mb-3">Advanced Checks</label>
+                                        <div class="flex flex-wrap gap-6">
+                                            <label class="flex items-center"><input type="checkbox" class="form-checkbox bg-[var(--input-bg)] border-[var(--input-border)] text-purple-500 rounded"> <span class="ml-2">Visual Regression Testing</span></label>
+                                            <label class="flex items-center"><input type="checkbox" class="form-checkbox bg-[var(--input-bg)] border-[var(--input-border)] text-purple-500 rounded"> <span class="ml-2">Accessibility (A11y) Scan</span></label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div id="api-runner-options" class="form-section space-y-6">
+                                     <h3 class="text-lg font-semibold">API Runner Configuration</h3>
+                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                        <div>
+                                            <label class="block text-sm font-medium mb-2">Runner Suite</label>
+                                            <select class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg p-2.5"><option selected disabled>Select Suite</option><option>Sanity</option><option>Regression</option></select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium mb-2">Execution Mode</label>
+                                            <select class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg p-2.5"><option selected disabled>Select Mode</option><option>Parallel</option><option>Sequential</option></select>
+                                        </div>
+                                    </div>
+                                    <label class="flex items-center pt-2"><input type="checkbox" class="form-checkbox bg-[var(--input-bg)] border-[var(--input-border)] text-purple-500 rounded"> <span class="ml-2">Enable Schema Validation</span></label>
+                                </div>
+
+                                <div id="mobile-runner-options" class="form-section space-y-6">
+                                    <h3 class="text-lg font-semibold">Mobile Runner Configuration</h3>
+                                    <div>
+                                        <label class="block text-sm font-medium mb-3">Platform Combinations</label>
+                                        <div class="flex flex-wrap gap-6">
+                                            <label class="flex items-center"><input type="checkbox" class="form-checkbox bg-[var(--input-bg)] border-[var(--input-border)] text-purple-500 rounded"> <span class="ml-2">Android</span></label>
+                                            <label class="flex items-center"><input type="checkbox" class="form-checkbox bg-[var(--input-bg)] border-[var(--input-border)] text-purple-500 rounded"> <span class="ml-2">iOS</span></label>
+                                        </div>
+                                    </div>
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                                        <div>
+                                            <label class="block text-sm font-medium mb-2">Runner Suite</label>
+                                            <select class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg p-2.5"><option selected disabled>Select Suite</option><option>Sanity</option><option>Regression</option></select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium mb-2">Execution Mode</label>
+                                            <select class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg p-2.5"><option selected disabled>Select Mode</option><option>Parallel</option><option>Sequential</option></select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium mb-2">Server Mode</label>
+                                            <select class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg p-2.5"><option selected disabled>Select Mode</option><option>Local Machine</option><option>Docker</option><option>Cloud</option></select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex space-x-4 pt-8">
+                                <button id="execute-runner-suite-btn" class="w-full bg-purple-600 hover:bg-purple-700 text-white rounded-lg py-3 font-semibold">Execute Suite</button>
+                                <button class="reset-btn w-full bg-gray-500 hover:bg-gray-600 text-white rounded-lg py-3 font-semibold">Reset</button>
+                            </div>
+                        </div>
+                        <div id="runner-live-execution"></div>
+                    </div>
+                </div>
+
+                <div id="ai-assistant" class="tab-pane">
+                    <h2 class="text-3xl font-bold mb-8">AI Assistant</h2>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 h-[75vh]">
+                        <div class="lg:col-span-2 glass-ui rounded-2xl flex flex-col p-4">
+                            <h3 class="text-xl font-semibold mb-4 px-2">Conversational AI</h3>
+                            <div id="chat-window" class="flex-1 bg-gray-200/50 dark:bg-gray-900/50 rounded-lg p-4 overflow-y-auto mb-4">
+                                <div class="flex items-start space-x-3 mb-4">
+                                    <div class="p-2 rounded-full bg-purple-500"><i class="fas fa-robot text-white"></i></div>
+                                    <div class="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg max-w-lg">
+                                        <p class="text-gray-800 dark:text-gray-200">Hello! How can I help you automate today? You can ask me to 'run sanity on web' or 'create a Jira ticket for a login bug'.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-3 p-2">
+                                <input type="text" id="chat-input" placeholder="Type your command..." class="flex-1 bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg p-3 focus:ring-purple-500 focus:border-purple-500">
+                                <button id="chat-send-btn" class="bg-purple-600 hover:bg-purple-700 text-white p-3 rounded-lg" data-tooltip="Send"><i class="fas fa-paper-plane"></i></button>
+                                <button id="voice-input-btn" class="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-lg" data-tooltip="Use Voice"><i class="fas fa-microphone"></i></button>
+                            </div>
+                        </div>
+                        <div class="space-y-8">
+                            <div class="glass-ui p-6 rounded-2xl">
+                                <h3 class="text-xl font-semibold mb-4">Command Palette</h3>
+                                <input type="text" id="command-search" placeholder="Search commands (e.g., 'run', 'jira')..." class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg p-2.5 focus:ring-purple-500 focus:border-purple-500">
+                            </div>
+                            <div class="glass-ui p-6 rounded-2xl">
+                                <h3 class="text-xl font-semibold mb-4">Code Generation</h3>
+                                <p class="text-sm text-[var(--text-muted-color)] mb-2">Generate a Python snippet to...</p>
+                                <textarea id="code-gen-input" placeholder="e.g., 'verify the API response for user login'" class="w-full h-24 bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg p-2.5 focus:ring-purple-500 focus:border-purple-500"></textarea>
+                                <button id="generate-code-btn" class="w-full mt-3 bg-green-600 hover:bg-green-700 text-white rounded-lg py-2.5 font-semibold">Generate</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="assistant-live-execution"></div>
+                </div>
+
+                <div id="settings" class="tab-pane">
+                     <h2 class="text-3xl font-bold mb-8">Settings</h2>
+                     <div id="settings-form" class="glass-ui p-8 rounded-2xl max-w-4xl mx-auto space-y-8">
+                        <div>
+                            <label for="env-setting-type" class="block text-sm font-medium mb-2">Environment Settings</label>
+                            <select id="env-setting-type" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg p-2.5 focus:ring-purple-500 focus:border-purple-500">
+                                <option value="default">Use Default Environment (env.yml)</option>
+                                <option value="custom">Use Custom Settings Below</option>
+                            </select>
+                        </div>
+
+                        <div id="custom-settings-section" class="hidden-section space-y-8">
+                            <div class="p-6 border border-gray-300 dark:border-gray-700 rounded-lg">
+                                <div class="flex justify-between items-center mb-4">
+                                     <h3 class="text-lg font-semibold">Jira Settings</h3>
+                                     <button id="add-jira-field" class="bg-green-600 hover:bg-green-700 rounded-full w-8 h-8 flex items-center justify-center text-white" data-tooltip="Add Custom Field">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                                <div class="space-y-5" id="jira-settings-form">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                        <input type="text" data-setting="jiraUrl" placeholder="Jira URL (e.g., https://your-company.atlassian.net)" class="bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg p-2.5">
+                                        <input type="text" data-setting="jiraProjectKey" placeholder="Jira Project Key (e.g., PROJ)" class="bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg p-2.5">
+                                        <input type="text" data-setting="jiraUsername" placeholder="Jira Username/Email" class="bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg p-2.5">
+                                        <input type="password" data-setting="jiraApiToken" placeholder="Jira API Token" class="bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg p-2.5">
+                                    </div>
+                                    <div id="jira-custom-fields-container" class="space-y-4">
+                                        <div class="jira-field-template hidden">
+                                            <div class="flex items-center gap-3 pt-4 border-t border-gray-300 dark:border-gray-700">
+                                                <div class="grid grid-cols-2 gap-3 flex-grow">
+                                                    <input type="text" data-setting-name="customFieldName" placeholder="Custom Field Name (e.g., Sprint)" class="bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg p-2.5">
+                                                    <input type="text" data-setting-name="customFieldId" placeholder="Custom Field ID (e.g., customfield_10020)" class="bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg p-2.5">
+                                                </div>
+                                                <button class="remove-jira-field bg-red-500 hover:bg-red-600 text-white rounded-full w-8 h-8 flex-shrink-0 flex items-center justify-center" data-tooltip="Remove Field">
+                                                    <i class="fas fa-minus"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="p-6 border border-gray-300 dark:border-gray-700 rounded-lg">
+                                <h3 class="text-lg font-semibold mb-4">Framework & Runner Settings</h3>
+                                <div>
+                                    <label for="settings-runner-type" class="block text-sm font-medium mb-2">Configure Settings For</label>
+                                    <select id="settings-runner-type" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg p-2.5 focus:ring-purple-500 focus:border-purple-500">
+                                        <option selected disabled>Select Runner Type</option>
+                                        <option value="web">Web Runner</option>
+                                        <option value="api">API Runner</option>
+                                        <option value="mobile">Mobile Runner</option>
+                                    </select>
+                                </div>
+                                <hr class="my-6 border-gray-300 dark:border-gray-700">
+
+                                <div id="settings-web" class="settings-section space-y-4">
+                                    <h4 class="text-md font-semibold">Web Application Settings</h4>
+                                    <input type="text" data-setting="webUrl" placeholder="Default Web URL to be tested" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg p-2.5">
+                                </div>
+                                <div id="settings-api" class="settings-section space-y-4">
+                                    <h4 class="text-md font-semibold">API Settings</h4>
+                                    <input type="text" data-setting="apiUrl" placeholder="Default API Base URL" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg p-2.5">
+                                </div>
+                                 <div id="settings-mobile" class="settings-section space-y-4">
+                                    <div class="flex justify-between items-center mb-3">
+                                        <h4 class="text-md font-semibold">Mobile Devices & Apps</h4>
+                                        <button id="add-mobile-device" class="bg-green-600 hover:bg-green-700 rounded-full w-8 h-8 flex items-center justify-center text-white" data-tooltip="Add Device">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                    </div>
+                                    <div id="mobile-devices-container" class="space-y-4">
+                                        <div class="mobile-device-template hidden">
+                                            <div class="flex items-center gap-3 pt-4 border-t border-gray-300 dark:border-gray-700">
+                                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 flex-grow">
+                                                    <input type="text" data-setting-name="deviceName" placeholder="Device Name (e.g., Pixel 5)" class="bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg p-2.5">
+                                                    <input type="text" data-setting-name="deviceUdid" placeholder="Device UDID" class="bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg p-2.5">
+                                                    <input type="text" data-setting-name="androidAppPath" placeholder="Android App Path/ID" class="bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg p-2.5">
+                                                    <input type="text" data-setting-name="iosAppPath" placeholder="iOS App Path/ID" class="bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg p-2.5">
+                                                </div>
+                                                <button class="remove-mobile-device bg-red-500 hover:bg-red-600 text-white rounded-full w-8 h-8 flex-shrink-0 flex items-center justify-center" data-tooltip="Remove Device">
+                                                    <i class="fas fa-minus"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex space-x-4 pt-4">
+                            <button id="save-settings-btn" class="w-full bg-purple-600 hover:bg-purple-700 text-white rounded-lg py-3 font-semibold">Save Settings</button>
+                            <button class="reset-btn w-full bg-gray-500 hover:bg-gray-600 text-white rounded-lg py-3 font-semibold">Reset to Default</button>
+                        </div>
+                     </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="report-modal" class="modal-overlay">
+        <div class="modal-content glass-ui">
+            <h3 class="text-xl font-semibold mb-4">Available Reports</h3>
+            <div id="report-list" class="space-y-2">
+                </div>
+            <div class="flex justify-end space-x-3 mt-6">
+                <button id="modal-cancel-btn" class="bg-gray-500 hover:bg-gray-600 text-white rounded-lg py-2 px-4 font-semibold">Cancel</button>
+                <button id="modal-select-btn" class="bg-purple-600 hover:bg-purple-700 text-white rounded-lg py-2 px-4 font-semibold disabled:opacity-50" disabled>Select</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- Global State for Selected Report ---
+        let selectedReport = null;
+
+        // --- Enhanced Animated Neural Network Background ---
+        const canvas = document.getElementById('neural-network-bg');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        let particlesArray;
+        const mouse = { x: null, y: null, radius: (canvas.height / 100) * (canvas.width / 100) };
+        
+        window.addEventListener('mousemove', event => { mouse.x = event.x; mouse.y = event.y; });
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            mouse.radius = (canvas.height / 100) * (canvas.width / 100);
+            init();
+        });
+        
+        class Particle {
+            constructor(x, y, directionX, directionY, size, color) { 
+                this.x = x; this.y = y; this.directionX = directionX; this.directionY = directionY; this.size = size; this.color = color;
+            }
+            draw() { ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2, false); ctx.fillStyle = this.color; ctx.fill(); }
+            update() {
+                if (this.x > canvas.width || this.x < 0) { this.directionX = -this.directionX; }
+                if (this.y > canvas.height || this.y < 0) { this.directionY = -this.directionY; }
+                let dx = mouse.x - this.x; let dy = mouse.y - this.y; let distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance < mouse.radius + this.size) {
+                    if (mouse.x < this.x && this.x < canvas.width - this.size * 10) { this.x += 3; }
+                    if (mouse.x > this.x && this.x > this.size * 10) { this.x -= 3; }
+                    if (mouse.y < this.y && this.y < canvas.height - this.size * 10) { this.y += 3; }
+                    if (mouse.y > this.y && this.y > this.size * 10) { this.y -= 3; }
+                }
+                this.x += this.directionX; this.y += this.directionY; this.draw();
+            }
+        }
+        
+        function init() {
+            particlesArray = []; 
+            let numberOfParticles = (canvas.height * canvas.width) / 9000;
+            const isDarkMode = document.documentElement.classList.contains('dark');
+            const colors = isDarkMode 
+                ? ['rgba(30, 27, 75, 0.7)', 'rgba(67, 56, 202, 0.6)', 'rgba(99, 102, 241, 0.5)', 'rgba(139, 92, 246, 0.6)']
+                : ['rgba(55, 48, 163, 0.8)', 'rgba(79, 70, 229, 0.7)', 'rgba(99, 102, 241, 0.6)', 'rgba(124, 58, 237, 0.7)'];
+            for (let i = 0; i < numberOfParticles; i++) {
+                let size = (Math.random() * 3.5) + 1; 
+                let x = (Math.random() * ((innerWidth - size * 2) - (size * 2)) + size * 2); 
+                let y = (Math.random() * ((innerHeight - size * 2) - (size * 2)) + size * 2);
+                let directionX = (Math.random() * 0.4) - 0.2; 
+                let directionY = (Math.random() * 0.4) - 0.2;
+                let color = colors[Math.floor(Math.random() * colors.length)];
+                particlesArray.push(new Particle(x, y, directionX, directionY, size, color));
+            }
+        }
+        
+        function connect() { 
+            let opacityValue = 1;
+            const isDarkMode = document.documentElement.classList.contains('dark');
+            for (let a = 0; a < particlesArray.length; a++) {
+                for (let b = a; b < particlesArray.length; b++) {
+                    let distance = ((particlesArray[a].x - particlesArray[b].x) * (particlesArray[a].x - particlesArray[b].x)) + ((particlesArray[a].y - particlesArray[b].y) * (particlesArray[a].y - particlesArray[b].y));
+                    if (distance < (canvas.width / 7) * (canvas.height / 7)) {
+                        opacityValue = 1 - (distance / 20000); 
+                        ctx.strokeStyle = isDarkMode ? `rgba(139, 92, 246, ${opacityValue * 0.3})` : `rgba(79, 70, 229, ${opacityValue * 0.4})`;
+                        ctx.lineWidth = 1;
+                        ctx.beginPath(); ctx.moveTo(particlesArray[a].x, particlesArray[a].y); ctx.lineTo(particlesArray[b].x, particlesArray[b].y); ctx.stroke();
+                    }
+                }
+            }
+        }
+        
+        function animate() { 
+            requestAnimationFrame(animate); 
+            ctx.clearRect(0, 0, innerWidth, innerHeight); 
+            for (let i = 0; i < particlesArray.length; i++) { particlesArray[i].update(); } 
+            connect(); 
+        }
+        
+        // --- Add Live Execution Status to Tabs ---
+        const liveExecutionTemplate = document.getElementById('live-execution-template');
+        document.getElementById('dashboard-live-execution').appendChild(liveExecutionTemplate.content.cloneNode(true));
+        document.getElementById('req-ai-live-execution').appendChild(liveExecutionTemplate.content.cloneNode(true));
+        document.getElementById('jira-live-execution').appendChild(liveExecutionTemplate.content.cloneNode(true));
+        document.getElementById('runner-live-execution').appendChild(liveExecutionTemplate.content.cloneNode(true));
+        document.getElementById('assistant-live-execution').appendChild(liveExecutionTemplate.content.cloneNode(true));
+
+        // --- Tab Navigation ---
+        const sidebarLinks = document.querySelectorAll('.sidebar-link');
+        const tabPanes = document.querySelectorAll('.tab-pane');
+        
+        function switchTab(tabId) {
+            sidebarLinks.forEach(l => l.classList.toggle('active', l.getAttribute('data-tab') === tabId));
+            tabPanes.forEach(p => p.classList.toggle('active', p.id === tabId));
+            window.location.hash = tabId;
+        }
+
+        sidebarLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const tabId = link.getAttribute('data-tab');
+                switchTab(tabId);
+            });
+        });
+        
+        const initialTab = window.location.hash.substring(1) || 'dashboard';
+        switchTab(initialTab);
+
+        // --- Dashboard Charts ---
+        let executionChart, pieChart;
+
+        // ######################################################
+        // #                  START OF THE FIX 1                #
+        // ######################################################
+
+        /**
+         * Parses the AI summary markdown text to extract key test metrics.
+         * @param {string} summaryText - The markdown summary from the AI.
+         * @returns {object} An object containing passed, failed, skipped, and total tests.
+         */
+        function parseAiSummaryForMetrics(summaryText) {
+            const metrics = {
+                passed: 0,
+                failed: 0,
+                skipped: 0,
+                total: 0
+            };
+
+            const passedMatch = summaryText.match(/Passed: (\d+)/);
+            if (passedMatch) metrics.passed = parseInt(passedMatch[1], 10);
+
+            const failedMatch = summaryText.match(/Failed: (\d+)/);
+            if (failedMatch) metrics.failed = parseInt(failedMatch[1], 10);
+
+            const skippedMatch = summaryText.match(/Skipped: (\d+)/);
+            if (skippedMatch) metrics.skipped = parseInt(skippedMatch[1], 10);
+            
+            const totalMatch = summaryText.match(/Total Tests: (\d+)/);
+            if (totalMatch) metrics.total = parseInt(totalMatch[1], 10);
+
+            // Fallback if total is not found, calculate from others
+            if (metrics.total === 0 && (metrics.passed > 0 || metrics.failed > 0 || metrics.skipped > 0)) {
+                metrics.total = metrics.passed + metrics.failed + metrics.skipped;
+            }
+
+            return metrics;
+        }
+
+        /**
+         * Renders or updates the dashboard charts.
+         * @param {object|null} metrics - An object with passed, failed, and skipped counts. If null, uses default data.
+         */
+        function renderCharts(metrics = null) {
+            const isDarkMode = document.documentElement.classList.contains('dark'); 
+            const gridColor = isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'; 
+            const labelColor = isDarkMode ? '#f9fafb' : '#374151';
+            
+            // Data initialization
+            let pieData = [1, 0, 0]; // Default to 100% passed if no data
+            let barLabels = ['Placeholder A', 'Placeholder B', 'Placeholder C'];
+            let barPassedData = [10, 15, 12];
+            let barFailedData = [1, 2, 3];
+
+            if (metrics && metrics.total > 0) {
+                pieData = [metrics.passed, metrics.failed, metrics.skipped];
+                // For the bar chart, show a simple overall result since we don't have per-category data
+                barLabels = ['Overall Results'];
+                barPassedData = [metrics.passed];
+                barFailedData = [metrics.failed];
+            }
+            
+            if (executionChart) executionChart.destroy();
+            const ctxBar = document.getElementById('executionChart').getContext('2d');
+            executionChart = new Chart(ctxBar, {
+                type: 'bar', 
+                data: { 
+                    labels: barLabels, 
+                    datasets: [
+                        { label: 'Passed', data: barPassedData, backgroundColor: 'rgba(34, 197, 94, 0.6)', borderColor: 'rgba(34, 197, 94, 1)', borderWidth: 1 }, 
+                        { label: 'Failed', data: barFailedData, backgroundColor: 'rgba(239, 68, 68, 0.6)', borderColor: 'rgba(239, 68, 68, 1)', borderWidth: 1 }
+                    ] 
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: labelColor } }, x: { grid: { color: gridColor }, ticks: { color: labelColor } } }, plugins: { legend: { labels: { color: labelColor } } } }
+            });
+
+            if (pieChart) pieChart.destroy();
+            const ctxPie = document.getElementById('pieChart').getContext('2d');
+            pieChart = new Chart(ctxPie, {
+                type: 'pie',
+                data: {
+                    labels: ['Passed', 'Failed', 'Skipped'],
+                    datasets: [{
+                        data: pieData,
+                        backgroundColor: ['rgba(34, 197, 94, 0.7)', 'rgba(239, 68, 68, 0.7)', 'rgba(251, 146, 60, 0.7)'],
+                        borderColor: [ 'rgba(34, 197, 94, 1)', 'rgba(239, 68, 68, 1)', 'rgba(251, 146, 60, 1)'],
+                        borderWidth: 1
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels: { color: labelColor } } } }
+            });
+        }
+        // ######################################################
+        // #                   END OF THE FIX 1                 #
+        // ######################################################
+
+
+        // --- Theme Toggle ---
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const sunIcon = themeToggleBtn.querySelector('.fa-sun');
+        const moonIcon = themeToggleBtn.querySelector('.fa-moon');
+        
+        const applyTheme = (theme) => {
+            if (theme === 'light') {
+                document.documentElement.classList.remove('dark');
+                sunIcon.classList.remove('hidden');
+                moonIcon.classList.add('hidden');
+            } else {
+                document.documentElement.classList.add('dark');
+                sunIcon.classList.add('hidden');
+                moonIcon.classList.remove('hidden');
+            }
+            renderCharts(); // Re-render charts with current data on theme change
+            init(); 
+        };
+
+        themeToggleBtn.addEventListener('click', () => {
+            const newTheme = document.documentElement.classList.contains('dark') ? 'light' : 'dark';
+            localStorage.setItem('theme', newTheme);
+            applyTheme(newTheme);
+        });
+        
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        applyTheme(savedTheme);
+        animate();
+
+        // --- Live Clock ---
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('live-clock').textContent = now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        }
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        // --- Universal Form Reset Logic ---
+        function resetForm(container) {
+            container.querySelectorAll('input, select, textarea').forEach(el => {
+                if (el.type === 'text' || el.type === 'password' || el.type === 'date' || el.type === 'number' || el.tagName.toLowerCase() === 'textarea') {
+                    el.value = '';
+                } else if (el.type === 'checkbox' || el.type === 'radio') {
+                    el.checked = false;
+                } else if (el.tagName.toLowerCase() === 'select') {
+                    el.selectedIndex = 0;
+                }
+            });
+            container.querySelectorAll('.form-section, .settings-section').forEach(section => section.classList.remove('active'));
+            const createRadio = container.querySelector('input[name="jira-action"][value="create"]');
+            if(createRadio) {
+                createRadio.checked = true;
+                document.getElementById('jira-create-section')?.classList.add('active');
+                document.getElementById('jira-update-section')?.classList.remove('active');
+            }
+            // FIX: Reset dashboard state on form reset
+            if (container.id === 'dashboard-report-form') {
+                resetDashboardState();
+            }
+        }
+
+        document.querySelectorAll('.reset-btn').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const formContainer = e.target.closest('.glass-ui, .tab-pane');
+                if (formContainer) {
+                    resetForm(formContainer);
+                    if (formContainer.id === 'req-ai') {
+                        resetAiArtifactsSection();
+                    }
+                }
+            });
+        });
+
+        // --- Dynamic Form Logic ---
+        document.getElementById('runner-type').addEventListener('change', (e) => {
+            document.querySelectorAll('#runner-suite .form-section').forEach(section => section.classList.remove('active'));
+            const targetSection = document.getElementById(`${e.target.value}-runner-options`);
+            if (targetSection) targetSection.classList.add('active');
+        });
+
+        document.querySelectorAll('input[name="jira-action"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                document.querySelectorAll('#jira-capabilities .form-section').forEach(section => section.classList.remove('active'));
+                const targetSection = document.getElementById(`jira-${e.target.value}-section`);
+                if (targetSection) targetSection.classList.add('active');
+            });
+        });
+        
+        const createTestsCheckbox = document.getElementById('create-tests-for-set');
+        const numTestsContainer = document.getElementById('num-tests-container');
+        document.getElementById('jira-create-type').addEventListener('change', (e) => {
+            const testSetOptions = document.getElementById('jira-test-set-options');
+            testSetOptions.classList.toggle('hidden-section', e.target.value !== 'Test Set');
+            if (e.target.value !== 'Test Set') {
+                createTestsCheckbox.checked = false;
+                numTestsContainer.classList.add('hidden-section');
+            }
+        });
+        createTestsCheckbox.addEventListener('change', (e) => {
+             numTestsContainer.classList.toggle('hidden-section', !e.target.checked);
+        });
+        
+        document.getElementById('env-setting-type').addEventListener('change', (e) => {
+            document.getElementById('custom-settings-section').classList.toggle('hidden-section', e.target.value !== 'custom');
+        });
+        document.getElementById('settings-runner-type').addEventListener('change', (e) => {
+            document.querySelectorAll('#settings .settings-section').forEach(section => section.classList.remove('active'));
+            const targetSection = document.getElementById(`settings-${e.target.value}`);
+            if (targetSection) targetSection.classList.add('active');
+        });
+        document.querySelector('input[name="jira-action"][value="create"]').checked = true;
+        document.getElementById('jira-create-section').classList.add('active');
+
+        function setupDynamicFields(containerId, addButtonId, templateClass, removeButtonClass) {
+            const container = document.getElementById(containerId);
+            const addButton = document.getElementById(addButtonId);
+            const template = document.querySelector(`.${templateClass}`);
+            
+            addButton.addEventListener('click', () => {
+                const newField = template.cloneNode(true);
+                newField.classList.remove(templateClass, 'hidden');
+                container.appendChild(newField);
+                newField.querySelector(`.${removeButtonClass}`).addEventListener('click', () => newField.remove());
+            });
+        }
+        setupDynamicFields('jira-custom-fields-container', 'add-jira-field', 'jira-field-template', 'remove-jira-field');
+        setupDynamicFields('mobile-devices-container', 'add-mobile-device', 'mobile-device-template', 'remove-mobile-device');
+
+        // --- Requirements & AI Artifacts Logic ---
+        const aiArtifactsControls = document.getElementById('ai-artifacts-controls');
+        const aiRequirementInput = document.getElementById('ai-requirement-input');
+        const aiWriteOwnReqCheckbox = document.getElementById('ai-write-own-req');
+        const aiProviderSelect = document.getElementById('ai-provider');
+        const aiModelSelect = document.getElementById('ai-model');
+
+        const aiModels = {
+            'OpenAI': ['GPT-4o', 'GPT-4 Turbo', 'GPT-3.5 Turbo'],
+            'Google Gemini': ['Gemini 1.5 Pro', 'Gemini 1.5 Flash', 'Gemini 1.0 Pro'],
+            'Anthropic': ['Claude 3 Opus', 'Claude 3 Sonnet', 'Claude 3 Haiku'],
+            'Groq': ['Llama3-8b', 'Llama3-70b', 'Mixtral-8x7b'],
+            'OpenRouter': ['Various Models']
+        };
+
+        function toggleAiArtifactsControls(enable) {
+            aiArtifactsControls.classList.toggle('opacity-50', !enable);
+            aiArtifactsControls.classList.toggle('cursor-not-allowed', !enable);
+            aiArtifactsControls.querySelectorAll('select, button, input').forEach(el => {
+                el.disabled = !enable;
+            });
+        }
+        
+        function resetAiArtifactsSection() {
+            aiRequirementInput.value = '';
+            aiWriteOwnReqCheckbox.checked = false;
+            aiRequirementInput.readOnly = true;
+            toggleAiArtifactsControls(false);
+        }
+
+        aiProviderSelect.addEventListener('change', () => {
+            const provider = aiProviderSelect.value;
+            const models = aiModels[provider] || [];
+            aiModelSelect.innerHTML = '<option selected disabled>Select Model</option>';
+            models.forEach(model => {
+                const option = document.createElement('option');
+                option.value = model;
+                option.textContent = model;
+                aiModelSelect.appendChild(option);
+            });
+        });
+
+        aiWriteOwnReqCheckbox.addEventListener('change', () => {
+            const isChecked = aiWriteOwnReqCheckbox.checked;
+            aiRequirementInput.readOnly = !isChecked;
+            toggleAiArtifactsControls(isChecked || aiRequirementInput.value.trim() !== '');
+            if(isChecked) aiRequirementInput.focus();
+        });
+        
+        aiRequirementInput.addEventListener('input', () => {
+             toggleAiArtifactsControls(aiRequirementInput.value.trim() !== '');
+        });
+
+        toggleAiArtifactsControls(false);
+        
+        // --- Live Execution with Backend ---
+        function startLiveExecution(containerId, taskName, queryParams = {}, onCompleteCallback, onLogMessage) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            const progressBar = container.querySelector('.progress-bar');
+            const progressPercentage = container.querySelector('.progress-percentage');
+            const liveLogs = container.querySelector('.live-logs');
+            const timeEstimationSpan = container.querySelector('.time-estimation');
+            const timeStartEndSpan = container.querySelector('.time-start-end');
+
+            let taskStartTime = new Date();
+            liveLogs.innerHTML = `<div>[${taskStartTime.toLocaleTimeString()}] Starting ${taskName}...</div>`;
+            progressBar.style.width = '0%';
+            progressPercentage.textContent = '0%';
+            timeStartEndSpan.textContent = `Start: ${taskStartTime.toLocaleTimeString()}`;
+            timeEstimationSpan.textContent = 'Est. Time: calculating...';
+
+            const formatTime = (seconds) => {
+                if (seconds < 60) return `${Math.round(seconds)}s`;
+                const minutes = Math.floor(seconds / 60);
+                const remainingSeconds = Math.round(seconds % 60);
+                return `${minutes}m ${remainingSeconds}s`;
+            };
+
+            let queryString = `task_name=${encodeURIComponent(taskName)}`;
+            for (const key in queryParams) {
+                queryString += `&${encodeURIComponent(key)}=${encodeURIComponent(queryParams[key])}`;
+            }
+            const eventSource = new EventSource(`/stream_logs?${queryString}`);
+
+            eventSource.onmessage = function(event) {
+                const data = JSON.parse(event.data); // This is the main SSE payload: {progress, log}
+                let isSpecialMessage = false;
+
+                // Check if the log content itself is our special JSON payload
+                if (data.log) {
+                    try {
+                        const logContent = JSON.parse(data.log);
+                        if (logContent && logContent.type === 'analysis_result') {
+                            isSpecialMessage = true;
+                            
+                            // Call the dedicated processor for the analysis result
+                            if (onLogMessage) {
+                                onLogMessage(data.log); // Pass the inner JSON string
+                            }
+                            
+                            // Add a user-friendly confirmation to the live log area
+                            const logEntry = document.createElement('div');
+                            logEntry.innerHTML = `<strong class="text-green-400">AI Analysis Result Received. See summary box for details.</strong>`;
+                            liveLogs.appendChild(logEntry);
+                            liveLogs.scrollTop = liveLogs.scrollHeight;
+                        }
+                    } catch (e) {
+                        // This is expected for regular log messages; do nothing.
+                    }
+                }
+
+                // If it's not the special message, treat it as a regular log
+                if (!isSpecialMessage && data.log) {
+                    progressBar.style.width = `${data.progress}%`;
+                    progressBar.classList.add('pulse-animation');
+                    progressPercentage.textContent = `${Math.round(data.progress)}%`;
+
+                    if (data.progress > 0 && data.progress < 100) {
+                        const elapsedTime = (new Date() - taskStartTime) / 1000;
+                        const totalEstimatedTime = (elapsedTime / data.progress) * 100;
+                        const remainingTime = totalEstimatedTime - elapsedTime;
+                        timeEstimationSpan.textContent = `Est. Time Left: ${formatTime(remainingTime)}`;
+                    }
+                    
+                    const logEntry = document.createElement('div');
+                    logEntry.innerHTML = data.log;
+                    liveLogs.appendChild(logEntry);
+                    liveLogs.scrollTop = liveLogs.scrollHeight;
+                }
+                
+                // Handle task completion
+                if (data.progress >= 100) {
+                    progressBar.style.width = '100%';
+                    progressPercentage.textContent = '100%';
+                    eventSource.close();
+                    progressBar.classList.remove('pulse-animation');
+                    const endTime = new Date();
+                    timeStartEndSpan.textContent = `Start/End: ${taskStartTime.toLocaleTimeString()} / ${endTime.toLocaleTimeString()}`;
+                    timeEstimationSpan.textContent = 'Completed';
+                    if (onCompleteCallback) onCompleteCallback();
+                }
+            };
+
+            eventSource.onerror = function(err) {
+                console.error("EventSource failed:", err);
+                eventSource.close();
+                const logEntry = document.createElement('div');
+                logEntry.innerHTML = `<strong class="text-red-500">Connection to server lost.</strong>`;
+                liveLogs.appendChild(logEntry);
+                timeEstimationSpan.textContent = 'Connection Error';
+            };
+        }
+
+
+        // --- Dashboard Report Logic ---
+        const getReportBtn = document.getElementById('get-report-btn');
+        const viewReportBtn = document.getElementById('view-report-btn');
+        const analyzeReportBtn = document.getElementById('analyze-report-btn');
+        const sendReportBtn = document.getElementById('send-report-btn');
+        const reportModal = document.getElementById('report-modal');
+        const reportListContainer = document.getElementById('report-list');
+        const modalSelectBtn = document.getElementById('modal-select-btn');
+        const modalCancelBtn = document.getElementById('modal-cancel-btn');
+
+        function resetDashboardState() {
+            selectedReport = null;
+            viewReportBtn.disabled = true;
+            analyzeReportBtn.disabled = true;
+            sendReportBtn.disabled = true;
+            document.getElementById('report-summary').value = 'Select a report to view analysis options.';
+            document.getElementById('report-date').value = '';
+            document.getElementById('req-source').selectedIndex = 0;
+            renderCharts(); // Reset charts to default view
+        }
+
+        getReportBtn.addEventListener('click', async () => {
+            const source = document.getElementById('req-source').value;
+            const reportDate = document.getElementById('report-date').value;
+
+            if (source === 'Select Source' || !reportDate) {
+                alert('Please select both a source and a date.');
+                return;
+            }
+
+            // Fetch all reports for the source to filter by date client-side
+            const response = await fetch(`/reports/${source.toLowerCase()}`);
+            const result = await response.json();
+
+            if (result.status === 'success' && result.reports) {
+                const matchingReports = result.reports.filter(report => {
+                    // Compare just the date part (YYYY-MM-DD)
+                    return report.date.startsWith(reportDate);
+                });
+                populateReportModal(matchingReports);
+            } else {
+                alert('Could not fetch reports. ' + (result.error || ''));
+            }
+        });
+
+        function populateReportModal(reports) {
+            reportListContainer.innerHTML = ''; // Clear previous list
+            if (reports.length === 0) {
+                reportListContainer.innerHTML = '<p class="text-[var(--text-muted-color)]">No reports found for the selected date.</p>';
+            } else {
+                reports.forEach(report => {
+                    const div = document.createElement('div');
+                    div.className = 'report-item p-3 border-b border-[var(--input-border)] rounded-md';
+                    div.dataset.reportId = report.id;
+                    div.dataset.reportDate = report.date.split(' ')[0]; // Store YYYY-MM-DD
+                    div.innerHTML = `
+                        <div class="font-semibold">${report.name}</div>
+                        <div class="text-sm text-[var(--text-muted-color)]">
+                            <span>Status: <span class="${report.status === 'Passed' ? 'text-green-500' : 'text-red-500'}">${report.status}</span></span> |
+                            <span>Tests: ${report.testCount}</span>
+                        </div>
+                    `;
+                    div.addEventListener('click', () => {
+                        // Handle selection styling
+                        reportListContainer.querySelectorAll('.report-item').forEach(item => item.classList.remove('selected'));
+                        div.classList.add('selected');
+                        modalSelectBtn.disabled = false;
+                    });
+                    reportListContainer.appendChild(div);
+                });
+            }
+            reportModal.classList.add('visible');
+        }
+
+        modalCancelBtn.addEventListener('click', () => {
+            reportModal.classList.remove('visible');
+            modalSelectBtn.disabled = true;
+        });
+
+        modalSelectBtn.addEventListener('click', () => {
+            const selectedItem = reportListContainer.querySelector('.report-item.selected');
+            if (selectedItem) {
+                selectedReport = {
+                    id: selectedItem.dataset.reportId,
+                    date: selectedItem.dataset.reportDate
+                };
+                // Update UI to reflect selection
+                document.getElementById('report-date').value = selectedReport.date;
+                viewReportBtn.disabled = false;
+                analyzeReportBtn.disabled = false;
+                sendReportBtn.disabled = false;
+                document.getElementById('report-summary').value = `Selected Report: ${selectedReport.id}. Ready for action.`;
+            }
+            reportModal.classList.remove('visible');
+            modalSelectBtn.disabled = true;
+        });
+
+        viewReportBtn.addEventListener('click', () => {
+            if (selectedReport && selectedReport.id) {
+                window.open(`/view_report/${selectedReport.id}`, '_blank');
+            } else {
+                alert('Please select a report first.');
+            }
+        });
+
+        // ######################################################
+        // #                  START OF THE FIX 2                #
+        // ######################################################
+        analyzeReportBtn.addEventListener('click', () => {
+            const aiProvider = document.getElementById('summary-ai-provider').value;
+            if (!selectedReport || !selectedReport.id) {
+                alert('Please select a report to analyze.');
+                return;
+            }
+            if (aiProvider === 'Select AI Provider') {
+                alert('Please select an AI Provider.');
+                return;
+            }
+            const reportSummaryTextArea = document.getElementById('report-summary');
+            reportSummaryTextArea.value = 'Analyzing report, please wait...'; // Give user feedback
+
+            const params = {
+                report_id: selectedReport.id,
+                provider: aiProvider
+            };
+
+            // This function will be called when the final AI result is received.
+            const logProcessor = (logMessage) => {
+                try {
+                    const parsedLog = JSON.parse(logMessage);
+
+                    if (parsedLog && parsedLog.type === 'analysis_result') {
+                        const summaryText = parsedLog.data;
+                        // 1. Update the summary text area with the AI-generated content
+                        reportSummaryTextArea.value = summaryText;
+
+                        // 2. Parse the summary text to get metrics
+                        const metrics = parseAiSummaryForMetrics(summaryText);
+                        
+                        // 3. Re-render the charts with the new metrics
+                        if (metrics.total > 0) {
+                            renderCharts(metrics);
+                        } else {
+                            // Handle case where metrics might not be parsed
+                            console.warn("Could not parse metrics from AI summary. Charts will not be updated.");
+                        }
+                    }
+                } catch (e) {
+                    reportSummaryTextArea.value = 'Failed to parse AI analysis result. See console for details.';
+                    console.error("Error processing AI result:", e);
+                }
+            };
+            
+            // Call startLiveExecution with the new log processor
+            startLiveExecution('dashboard-live-execution', 'AI Report Analysis', params, null, logProcessor);
+        });
+        // ######################################################
+        // #                   END OF THE FIX 2                 #
+        // ######################################################
+
+        sendReportBtn.addEventListener('click', () => {
+            const selectedChannels = Array.from(document.querySelectorAll('input[name="send-channel"]:checked')).map(cb => cb.value);
+            if (!selectedReport || !selectedReport.id) {
+                alert('Please select a report to send.');
+                return;
+            }
+            if (selectedChannels.length === 0) {
+                alert('Please select at least one channel (Slack, Email, or Download).');
+                return;
+            }
+            
+            // Handle download separately as it's a direct fetch, not a background task
+            if (selectedChannels.includes('Download')) {
+                fetch('/send_report', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ date: selectedReport.date, channels: ['Download'] })
+                }).then(async response => {
+                    if (response.ok) {
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.style.display = 'none'; a.href = url; a.download = `test-report-${selectedReport.date}.html`;
+                        document.body.appendChild(a); a.click(); window.URL.revokeObjectURL(url);
+                    } else {
+                        alert('Failed to download report.');
+                    }
+                });
+            }
+
+            // Handle other channels via live execution
+            const channelsForTask = selectedChannels.filter(c => c !== 'Download');
+            if (channelsForTask.length > 0) {
+                 const params = {
+                    report_id: selectedReport.id,
+                    channels: channelsForTask.join(',')
+                };
+                startLiveExecution('dashboard-live-execution', 'Send Report', params);
+            }
+        });
+        
+        // --- UPDATED: Fetch Requirements Button ---
+        document.getElementById('execute-fetch-btn')?.addEventListener('click', () => {
+            const source = document.getElementById('fetch-req-source').value;
+            const sourceId = document.getElementById('fetch-source-id').value;
+            if (source === 'Select Source' || !sourceId) {
+                alert('Please select a source and provide a Source ID.');
+                return;
+            }
+            const payload = { source, source_id: sourceId };
+            startLiveExecution('req-ai-live-execution', 'Requirement Fetching', {}, async () => {
+                const response = await fetch('/fetch_requirements', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+                if (result.status === 'success') {
+                    document.getElementById('ai-requirement-input').value = result.requirement;
+                    toggleAiArtifactsControls(true); // Enable Step 2
+                } else {
+                    alert('Error fetching requirement: ' + result.error);
+                }
+            });
+        });
+        
+        // --- UPDATED: Generate AI Artifacts Button ---
+        document.getElementById('execute-ai-artifacts-btn')?.addEventListener('click', () => {
+            const payload = {
+                requirement: document.getElementById('ai-requirement-input').value,
+                provider: document.getElementById('ai-provider').value,
+                model: document.getElementById('ai-model').value,
+                artifact_type: document.getElementById('ai-artifact-type').value,
+                self_healing: document.getElementById('ai-self-healing').checked
+            };
+            if (!payload.requirement || payload.provider === 'Select Provider' || payload.model === 'Select Model' || payload.artifact_type === 'Select Type') {
+                alert('Please ensure a requirement is present and all AI options are selected.');
+                return;
+            }
+
+            startLiveExecution('req-ai-live-execution', 'AI Artifact Generation', {}, async () => {
+                const response = await fetch('/generate_artifact', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+                if (result.status === 'success') {
+                    // Open the new, clean view in a new tab
+                    window.open(`/view_artifact/${result.artifact_id}`, '_blank');
+
+                    // Add a link to the logs for easy access
+                    const logArea = document.querySelector('#req-ai-live-execution .live-logs');
+                    const linkElement = document.createElement('div');
+                    linkElement.innerHTML = `Artifact generated. <a href="/view_artifact/${result.artifact_id}" target="_blank" style="color: #87CEEB;">View Artifact</a>`;
+                    logArea.appendChild(linkElement);
+                    logArea.scrollTop = logArea.scrollHeight;
+                } else {
+                    alert('Error generating artifact: ' + result.error);
+                }
+            });
+        });
+
+        // REFACTORED: Event listener for the Jira execute button
+        document.getElementById('execute-jira-btn')?.addEventListener('click', () => {
+            const jiraForm = document.getElementById('jira-form');
+            const action = jiraForm.querySelector('input[name="jira-action"]:checked')?.value;
+            
+            if (!action) {
+                console.error('Please select a Jira action (Create or Update).');
+                // In a real app, you'd show a user-friendly message here.
+                return;
+            }
+
+            const params = { action };
+            const activeSectionId = `jira-${action}-section`;
+            const activeSection = document.getElementById(activeSectionId);
+
+            if (activeSection) {
+                // Collect all fields with a data-field attribute from the active section
+                activeSection.querySelectorAll('[data-field]').forEach(input => {
+                    if (input.value.trim()) {
+                        params[input.dataset.field] = input.value.trim();
+                    }
+                });
+                
+                // Specifically handle the issue type select for the 'create' action
+                if (action === 'create') {
+                    const issueTypeSelect = activeSection.querySelector('#jira-create-type');
+                    if (issueTypeSelect && issueTypeSelect.value !== 'Select Type') {
+                        params.issue_type = issueTypeSelect.value;
+                    }
+                }
+            }
+            
+            // Start the live execution with the collected parameters
+            startLiveExecution('jira-live-execution', 'Jira Action', params);
+        });
+        
+        document.getElementById('execute-runner-suite-btn')?.addEventListener('click', () => {
+            const runnerType = document.getElementById('runner-type').value;
+            if (runnerType === 'Select Runner Type') {
+                alert('Please select a Runner Type first.');
+                return;
+            }
+            const taskName = `${runnerType.toUpperCase()} Test Suite Execution`;
+            startLiveExecution('runner-live-execution', taskName, { runner_type: runnerType });
+        });
+
+        // --- AI Assistant Chat ---
+        const chatInput = document.getElementById('chat-input');
+        const chatSendBtn = document.getElementById('chat-send-btn');
+        const chatWindow = document.getElementById('chat-window');
+
+        function addChatMessage(message, isUser = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `flex items-start space-x-3 mb-4 ${isUser ? 'justify-end' : ''}`;
+            const userHtml = `<div class="bg-purple-500 text-white p-3 rounded-lg max-w-lg"><p>${message}</p></div><div class="p-2 rounded-full bg-gray-500"><i class="fas fa-user text-white"></i></div>`;
+            const botHtml = `<div class="p-2 rounded-full bg-purple-500"><i class="fas fa-robot text-white"></i></div><div class="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg max-w-lg"><p class="text-gray-800 dark:text-gray-200">${message}</p></div>`;
+            messageDiv.innerHTML = isUser ? userHtml : botHtml;
+            chatWindow.appendChild(messageDiv);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        function processChatCommand(command) {
+            const lowerCommand = command.toLowerCase();
+            if (lowerCommand.includes('run') && lowerCommand.includes('sanity')) {
+                startLiveExecution('assistant-live-execution', 'Sanity Suite', {});
+                return "I'll start the sanity test suite. Check the live execution status below.";
+            } else if (lowerCommand.includes('jira')) {
+                return "I can help with that. What's the issue? Please provide a brief description.";
+            } else {
+                return "I understand. Could you be more specific? For example, 'run sanity on web'.";
+            }
+        }
+
+        chatSendBtn.addEventListener('click', () => {
+            const message = chatInput.value.trim();
+            if (message) {
+                addChatMessage(message, true);
+                chatInput.value = '';
+                setTimeout(() => addChatMessage(processChatCommand(message)), 1000);
+            }
+        });
+        chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') chatSendBtn.click(); });
+
+        document.getElementById('voice-input-btn')?.addEventListener('click', () => addChatMessage("Voice input is not implemented, but would use a speech-to-text API."));
+        document.getElementById('generate-code-btn')?.addEventListener('click', () => {
+            const input = document.getElementById('code-gen-input').value;
+            if (input.trim()) {
+                addChatMessage(`Generate Python code for: ${input}`, true);
+                setTimeout(() => {
+                    const codeResponse = `Here's a Python snippet for "${input}":\n\n\`\`\`python\nimport requests\n\ndef verify_api_response():\n    response = requests.get('https://api.example.com/login')\n    assert response.status_code == 200\n    assert 'token' in response.json()\n    print("API verification passed!")\n\`\`\``;
+                    addChatMessage(codeResponse.replace(/\n/g, '<br>').replace(/ /g, '&nbsp;'));
+                }, 1500);
+            }
+        });
+        
+        console.log('SakAutomationLabs AI Test Suite loaded successfully!');
+    });
+
+    // Add this JavaScript to your frontend to handle actual test execution
+
+// Function to execute tests
+async function executeTests(testType = 'api', suite = 'regression', mode = 'sequential') {
+    try {
+        showMessage('Starting test execution...', 'info');
+        
+        const response = await fetch('/execute_tests', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                testType: testType,
+                suite: suite,
+                mode: mode
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.status === 'success') {
+            showMessage(`Test execution started: ${result.execution_id}`, 'success');
+            // Start streaming the execution logs
+            streamTestExecution(result.execution_id);
+        } else {
+            showMessage(`Failed to start test execution: ${result.error}`, 'error');
+        }
+        
+    } catch (error) {
+        console.error('Error starting test execution:', error);
+        showMessage('Failed to start test execution', 'error');
+    }
+}
+
+// Function to stream test execution logs
+function streamTestExecution(executionId) {
+    const eventSource = new EventSource(`/stream_test_execution/${executionId}`);
+    
+    // Clear previous logs
+    const logContainer = document.getElementById('execution-logs');
+    if (logContainer) {
+        logContainer.innerHTML = '';
+    }
+    
+    eventSource.onmessage = function(event) {
+        try {
+            const data = JSON.parse(event.data);
+            
+            if (data.type === 'log') {
+                appendLog(data.message, data.level);
+            } else if (data.type === 'progress') {
+                updateProgress(data.progress);
+            } else if (data.type === 'error') {
+                appendLog(`ERROR: ${data.message}`, 'error');
+                showMessage(data.message, 'error');
+            } else if (data.type === 'complete') {
+                appendLog('Test execution completed!', 'success');
+                showMessage('Test execution completed successfully!', 'success');
+                eventSource.close();
+                
+                // Refresh available reports after completion
+                setTimeout(() => {
+                    refreshAvailableReports();
+                }, 2000);
+            }
+            
+        } catch (error) {
+            console.error('Error parsing execution log:', error);
+        }
+    };
+    
+    eventSource.onerror = function(error) {
+        console.error('EventSource error:', error);
+        showMessage('Connection lost during test execution', 'error');
+        eventSource.close();
+    };
+}
+
+// Function to get available reports
+async function refreshAvailableReports() {
+    try {
+        const response = await fetch('/get_available_reports');
+        const result = await response.json();
+        
+        if (result.status === 'success') {
+            displayAvailableReports(result.reports);
+            showMessage(`Found ${result.total_reports} reports`, 'info');
+        } else {
+            showMessage('No reports found', 'warning');
+        }
+        
+    } catch (error) {
+        console.error('Error fetching available reports:', error);
+        showMessage('Failed to fetch available reports', 'error');
+    }
+}
+
+// Function to display available reports in UI
+function displayAvailableReports(reports) {
+    const container = document.getElementById('available-reports');
+    if (!container) return;
+    
+    container.innerHTML = '<h3>Available Reports</h3>';
+    
+    if (Object.keys(reports).length === 0) {
+        container.innerHTML += '<p>No reports found. Run some tests first!</p>';
+        return;
+    }
+    
+    for (const [testType, reportList] of Object.entries(reports)) {
+        const section = document.createElement('div');
+        section.innerHTML = `
+            <h4>${testType.toUpperCase()} Reports (${reportList.length})</h4>
+            <div class="report-list">
+                ${reportList.map(report => `
+                    <div class="report-item">
+                        <span class="report-name">${report.name}</span>
+                        <span class="report-date">${report.date}</span>
+                        <span class="report-status status-${report.status.toLowerCase()}">${report.status}</span>
+                        <span class="report-tests">${report.testCount} tests</span>
+                        <button onclick="viewReportById('${report.id}')" class="btn btn-sm">View</button>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+        container.appendChild(section);
+    }
+}
+
+// Function to view report by ID
+function viewReportById(reportId) {
+    window.open(`/view_report/${reportId}`, '_blank');
+}
+
+// Function to append logs to the UI
+function appendLog(message, level = 'info') {
+    const logContainer = document.getElementById('execution-logs');
+    if (!logContainer) return;
+    
+    const logEntry = document.createElement('div');
+    logEntry.className = `log-entry log-${level}`;
+    logEntry.textContent = message;
+    
+    logContainer.appendChild(logEntry);
+    logContainer.scrollTop = logContainer.scrollHeight;
+}
+
+// Function to update progress bar
+function updateProgress(progress) {
+    const progressBar = document.getElementById('execution-progress');
+    if (progressBar) {
+        progressBar.style.width = `${progress}%`;
+        progressBar.setAttribute('aria-valuenow', progress);
+        progressBar.textContent = `${Math.round(progress)}%`;
+    }
+}
+
+// Add to your existing HTML or create buttons to trigger these functions:
+/*
+<div class="test-execution-section">
+    <h2>Test Execution</h2>
+    
+    <div class="execution-controls">
+        <button onclick="executeTests('api', 'sanity')" class="btn btn-primary">Run API Sanity Tests</button>
+        <button onclick="executeTests('api', 'regression')" class="btn btn-primary">Run API Regression Tests</button>
+        <button onclick="executeTests('web', 'sanity')" class="btn btn-primary">Run Web Tests</button>
+        <button onclick="executeTests('mobile', 'regression')" class="btn btn-primary">Run Mobile Tests</button>
+    </div>
+    
+    <div class="execution-status">
+        <div class="progress">
+            <div id="execution-progress" class="progress-bar" style="width: 0%">0%</div>
+        </div>
+        <div id="execution-logs" class="log-container"></div>
+    </div>
+    
+    <div id="available-reports" class="reports-section"></div>
+</div>
+
+<style>
+.log-container {
+    height: 300px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    padding: 10px;
+    font-family: monospace;
+    background-color: #f8f9fa;
+}
+
+.log-entry {
+    margin: 2px 0;
+    padding: 2px;
+}
+
+.log-info { color: #0066cc; }
+.log-success { color: #28a745; }
+.log-warning { color: #ffc107; }
+.log-error { color: #dc3545; }
+
+.report-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px;
+    border: 1px solid #eee;
+    margin: 4px 0;
+}
+
+.status-passed { color: #28a745; font-weight: bold; }
+.status-failed { color: #dc3545; font-weight: bold; }
+</style>
+*/
+
+    </script>
+</body>
+</html>
